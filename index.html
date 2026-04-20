@@ -20456,51 +20456,60 @@ var __async = (__this, __arguments, generator) => {
 let students = [], subjects = [], teachers = [], groupName = '';
 
 // ── CSV helpers ──────────────────────────────────────────────────────────────
-function splitCSV(line) {
-  const res = []; let cur = ''; let inQ = false;
-  for (const c of line) {
-    if (c === '"') { inQ = !inQ; }
-    else if (c === ',' && !inQ) { res.push(cur); cur = ''; }
-    else cur += c;
+// Full RFC-4180 CSV parser — handles newlines inside quoted fields
+function parseCSVFull(text) {
+  const records = [];
+  let cur = '', inQ = false, row = [];
+  const t = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (c === '"') {
+      if (inQ && t[i+1] === '"') { cur += '"'; i++; } // escaped quote
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      row.push(cur.trim()); cur = '';
+    } else if (c === '\n' && !inQ) {
+      row.push(cur.trim()); cur = '';
+      if (row.some(f => f !== '')) records.push(row);
+      row = [];
+    } else {
+      // Inside quoted field, replace newlines with space
+      cur += (c === '\n' && inQ) ? ' ' : c;
+    }
   }
-  res.push(cur);
-  return res;
+  if (cur || row.length) { row.push(cur.trim()); if (row.some(f => f !== '')) records.push(row); }
+  return records;
 }
 
 function parseCSV(text) {
-  // Normalize line endings
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-    .split('\n').map(l => l.trim()).filter(l => l);
+  const records = parseCSVFull(text);
+  if (!records.length) return [];
 
-  const cols = splitCSV(lines[0]);
-  // subjects: columns 2 .. (last-1), last column is "Середній бал"
-  const subjCount = cols.length - 3; // minus №, ПІБ, Середній бал
-  subjects = cols.slice(2, 2 + subjCount).map(s => s.trim());
+  const header = records[0];
+  const subjCount = header.length - 3; // №, ПІБ, [subjects...], Середній бал
+  subjects = header.slice(2, 2 + subjCount).map(s => s.trim());
 
-  // Find teacher row — search by keyword, robust to leading comma
-  const tRowIdx = lines.findIndex(l => /викладач/i.test(l));
-  if (tRowIdx !== -1) {
-    const tc = splitCSV(lines[tRowIdx]);
-    // tc[0]=empty, tc[1]="викладачі", tc[2..2+subjCount-1]=teachers
-    teachers = subjects.map((_, i) => (tc[i + 2] || '').trim());
+  // Find teacher record
+  const tRec = records.find(r => /викладач/i.test(r[1] || r[0] || ''));
+  if (tRec) {
+    teachers = subjects.map((_, i) => (tRec[i + 2] || '').replace(/\s+/g, ' ').trim());
   } else {
     teachers = subjects.map(() => '');
   }
 
   const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const parts = splitCSV(lines[i]);
+  for (let i = 1; i < records.length; i++) {
+    const parts = records[i];
     const no = parts[0]?.trim();
-    if (!no || !/^\d/.test(no)) break;
+    if (!no || !/^\d/.test(no)) continue;
     const name = parts[1]?.trim() || '';
     const grades = subjects.map((_, j) => {
       const v = (parts[j + 2] || '').trim();
       const n = parseInt(v);
-      return isNaN(n) ? null : n;
+      return isNaN(n) ? null : n;  // "зар.", "н/а" etc. → null
     });
-    // avg is always the last column
     const avgRaw = (parts[parts.length - 1] || '').trim();
-    const avg = (avgRaw && avgRaw !== '#DIV/0!' && !/^[a-z#]/i.test(avgRaw)) ? avgRaw : null;
+    const avg = (avgRaw && avgRaw !== '#DIV/0!' && /[\d,.]/.test(avgRaw)) ? avgRaw : null;
     rows.push({ no, name, grades, avg });
   }
   return rows;
