@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Виписки оцінок — ЗАФК</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F4F2EC;
+    --surface: #FDFCF8;
+    --surface2: #EDEBE3;
+    --border: #D8D4C8;
+    --text: #1A1916;
+    --text2: #6B6760;
+    --text3: #9E9A93;
+    --accent: #1A3F6F;
+    --accent-l: #E6EEF8;
+    --g5: #1A6B1A; --g5bg: #D6F0D6;
+    --g4: #7A6000; --g4bg: #FFF9CC;
+    --g3: #C04000; --g3bg: #FFE5CC;
+    --red: #C0202A; --redbg: #FDEAEA;
+    --green: #1A6B1A; --greenbg: #D6F0D6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--accent);
+    color: white;
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 3px solid #0F2A4A;
+  }
+  header .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    opacity: .7;
+    text-transform: uppercase;
+  }
+  header h1 { font-size: 17px; font-weight: 600; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* DROP ZONE */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .dropzone:hover, .dropzone.over {
+    border-color: var(--accent);
+    background: var(--accent-l);
+  }
+  .dropzone input { display: none; }
+  .drop-icon {
+    width: 52px; height: 52px;
+    background: var(--accent-l);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin: 0 auto 1rem;
+  }
+  .dropzone h2 { font-size: 16px; font-weight: 600; margin-bottom: .35rem; }
+  .dropzone p { font-size: 13px; color: var(--text2); }
+  .dropzone .hint {
+    margin-top: 1rem;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text3);
+    background: var(--surface2);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+
+  /* APP */
+  #app { display: none; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .top-bar h2 {
+    font-size: 15px; font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text2);
+    flex: 1;
+  }
+
+  .stats {
+    display: flex;
+    gap: .75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .6rem 1rem;
+    min-width: 110px;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+  .stat-val { font-size: 24px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; line-height: 1.2; }
+
+  .controls {
+    display: flex;
+    gap: .6rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  input[type=text], select {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    outline: none;
+    transition: border-color .12s;
+  }
+  input[type=text]:focus, select:focus { border-color: var(--accent); }
+  input[type=text] { flex: 1; min-width: 200px; }
+
+  .btn {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity .12s, transform .1s;
+    border: none;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-accent:hover { opacity: .88; }
+  .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--text2); }
+  .btn-ghost:hover { background: var(--surface2); }
+
+  /* TABLE */
+  .tbl-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); }
+  thead tr { background: var(--accent); color: white; }
+  th {
+    padding: 9px 10px;
+    font-weight: 500;
+    font-size: 11px;
+    text-align: center;
+    white-space: nowrap;
+    position: sticky; top: 0;
+  }
+  th:first-child { text-align: left; width: 36px; }
+  th.name-col { text-align: left; min-width: 220px; }
+  th.avg-col { min-width: 70px; }
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    vertical-align: middle;
+  }
+  td.name-td { text-align: left; font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--accent-l); }
+
+  .grade {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    font-weight: 600; font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .g5 { background: var(--g5bg); color: var(--g5); }
+  .g4 { background: var(--g4bg); color: var(--g4); }
+  .g3 { background: var(--g3bg); color: var(--g3); }
+  .gx { color: var(--text3); font-size: 15px; }
+
+  .avg-val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .avg5 { color: var(--g5); }
+  .avg4 { color: var(--g4); }
+  .avg3 { color: var(--g3); }
+
+  .badge {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: .03em;
+  }
+  .badge-ok { background: var(--greenbg); color: var(--green); }
+  .badge-no { background: var(--redbg); color: var(--red); }
+
+  .no-rows { padding: 2rem; text-align: center; color: var(--text3); font-size: 14px; }
+
+  /* PRINT / DOCX preview */
+  #preview { display: none; }
+
+  @media print {
+    header, .dropzone, #app .top-bar, .stats, .controls, .tbl-scroll, .btn { display: none !important; }
+    #preview { display: block !important; }
+    .page-break { page-break-after: always; }
+    .slip { padding: 1.2cm; font-family: Arial, sans-serif; }
+    .slip-header { font-size: 9pt; color: #555; margin-bottom: 4pt; }
+    .slip-title { font-size: 14pt; font-weight: bold; border-bottom: 2px solid #1A3F6F; padding-bottom: 4pt; margin-bottom: 10pt; color: #1A3F6F; }
+    .slip table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+    .slip th { background: #1A3F6F; color: white; padding: 5pt 8pt; text-align: left; }
+    .slip td { padding: 5pt 8pt; border-bottom: 1px solid #ddd; }
+    .slip .avg-row td { background: #D0E4F5; font-weight: bold; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">ЗАФК · Атестація</div>
+    <h1>Конвертер виписок оцінок</h1>
+  </div>
+</header>
+
+<main>
+  <div class="dropzone" id="drop" onclick="document.getElementById('fi').click()">
+    <div class="drop-icon">📂</div>
+    <h2>Завантажте CSV-файл з Google Sheets</h2>
+    <p>Перетягніть файл сюди або натисніть щоб вибрати</p>
+    <div class="hint">Файл → Завантажити → CSV (.csv)</div>
+    <input type="file" id="fi" accept=".csv">
+  </div>
+
+  <div id="app">
+    <div class="stats" id="statsRow"></div>
+
+    <div class="controls">
+      <input type="text" id="search" placeholder="🔍  Пошук за прізвищем..." oninput="renderTable()">
+      <select id="flt" onchange="renderTable()">
+        <option value="">Усі студенти</option>
+        <option value="ok">Тільки атестовані</option>
+        <option value="no">Без оцінок</option>
+      </select>
+      <button class="btn btn-ghost" onclick="resetFile()">↩ Новий файл</button>
+      <button class="btn btn-accent" onclick="generateDocx()">⬇ Завантажити DOCX</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨 Друкувати</button>
+    </div>
+
+    <div class="top-bar">
+      <h2 id="rowCount"></h2>
+    </div>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="preview"></div>
+</main>
+
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<script>
+let students = [], subjects = [], teachers = [];
+
+function splitCSV(line) {
+  const res = []; let cur = ''; let inQ = false;
+  for (const c of line) {
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { res.push(cur); cur = ''; }
+    else cur += c;
+  }
+  res.push(cur);
+  return res;
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const cols = splitCSV(lines[0]);
+  subjects = cols.slice(2, cols.length - 1);
+
+  const tRow = lines.find(l => l.startsWith(',викладачі') || l.includes('викладачі'));
+  teachers = subjects.map((_, i) => {
+    if (!tRow) return '';
+    const tc = splitCSV(tRow);
+    return (tc[i + 2] || '').trim();
+  });
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = splitCSV(lines[i]);
+    const no = parts[0]?.trim();
+    if (!no || !/^\d/.test(no)) break;
+    const name = parts[1]?.trim() || '';
+    const grades = subjects.map((_, j) => {
+      const v = parts[j + 2]?.trim();
+      const n = parseInt(v);
+      return isNaN(n) ? null : n;
+    });
+    const avgRaw = parts[parts.length - 1]?.trim();
+    const avg = (avgRaw && avgRaw !== '#DIV/0!') ? avgRaw : null;
+    rows.push({ no, name, grades, avg });
+  }
+  return rows;
+}
+
+document.getElementById('fi').onchange = function(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => loadData(ev.target.result);
+  r.readAsText(f, 'UTF-8');
+};
+
+const dz = document.getElementById('drop');
+dz.ondragover = e => { e.preventDefault(); dz.classList.add('over'); };
+dz.ondragleave = () => dz.classList.remove('over');
+dz.ondrop = e => {
+  e.preventDefault(); dz.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) { const r = new FileReader(); r.onload = ev => loadData(ev.target.result); r.readAsText(f, 'UTF-8'); }
+};
+
+function loadData(text) {
+  students = parseCSV(text);
+  const ok = students.filter(s => s.avg).length;
+
+  document.getElementById('drop').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat"><div class="stat-label">Студентів</div><div class="stat-val">${students.length}</div></div>
+    <div class="stat"><div class="stat-label">Атестовано</div><div class="stat-val">${ok}</div></div>
+    <div class="stat"><div class="stat-label">Не атестовано</div><div class="stat-val">${students.length - ok}</div></div>
+    <div class="stat"><div class="stat-label">Предметів</div><div class="stat-val">${subjects.length}</div></div>
+  `;
+
+  const hr = document.getElementById('thead-row');
+  let h = '<th>#</th><th class="name-col">ПІБ студента</th>';
+  subjects.forEach(s => h += `<th title="${s}">${s.length > 7 ? s.slice(0,7)+'…' : s}</th>`);
+  h += '<th class="avg-col">Серед.</th><th>Статус</th>';
+  hr.innerHTML = h;
+
+  renderTable();
+}
+
+function gradeHtml(g) {
+  if (g === null) return '<span class="gx">—</span>';
+  const cls = g >= 5 ? 'g5' : g >= 4 ? 'g4' : 'g3';
+  return `<span class="grade ${cls}">${g}</span>`;
+}
+
+function avgHtml(a) {
+  if (!a) return '<span class="gx">—</span>';
+  const n = parseFloat(a.replace(',', '.'));
+  const cls = n >= 4.5 ? 'avg5' : n >= 3.5 ? 'avg4' : 'avg3';
+  return `<span class="avg-val ${cls}">${a}</span>`;
+}
+
+function renderTable() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const flt = document.getElementById('flt').value;
+  const list = students.filter(s => {
+    if (q && !s.name.toLowerCase().includes(q)) return false;
+    if (flt === 'ok' && !s.avg) return false;
+    if (flt === 'no' && s.avg) return false;
+    return true;
+  });
+  document.getElementById('rowCount').textContent = `Показано ${list.length} з ${students.length} студентів`;
+  const tb = document.getElementById('tbody');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="100" class="no-rows">Нічого не знайдено</td></tr>'; return; }
+  tb.innerHTML = list.map(s => `
+    <tr>
+      <td style="color:var(--text3);font-size:12px">${s.no}</td>
+      <td class="name-td">${s.name}</td>
+      ${s.grades.map(g => `<td>${gradeHtml(g)}</td>`).join('')}
+      <td>${avgHtml(s.avg)}</td>
+      <td>${s.avg ? '<span class="badge badge-ok">атест.</span>' : '<span class="badge badge-no">відсутній</span>'}</td>
+    </tr>`).join('');
+}
+
+function resetFile() {
+  students = []; subjects = []; teachers = [];
+  document.getElementById('drop').style.display = '';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('fi').value = '';
+}
+
+// ─── DOCX GENERATION ────────────────────────────────────────────────────────
+
+function generateDocx() {
+  const D = docx;
+  const border = { style: D.BorderStyle.SINGLE, size: 4, color: '2E5F8A' };
+  const borders = { top: border, bottom: border, left: border, right: border };
+  const hdrBorder = { style: D.BorderStyle.SINGLE, size: 4, color: '1A3F6F' };
+  const hdrBorders = { top: hdrBorder, bottom: hdrBorder, left: hdrBorder, right: hdrBorder };
+
+  function gc(g) {
+    if (g === 5) return 'D6F0D6';
+    if (g === 4) return 'FFF9CC';
+    if (g === 3) return 'FFE5CC';
+    return 'F5F5F5';
+  }
+
+  function makeSlip(s, isLast) {
+    const hasGrades = s.grades.some(g => g !== null);
+
+    const tableRows = [];
+
+    // header row
+    tableRows.push(new D.TableRow({
+      children: [
+        new D.TableCell({
+          borders: hdrBorders, width: { size: 6400, type: D.WidthType.DXA },
+          shading: { fill: '1E4E79', type: D.ShadingType.CLEAR },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Дисципліна', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })]
+        }),
+        new D.TableCell({
+          borders: hdrBorders, width: { size: 1300, type: D.WidthType.DXA },
+          shading: { fill: '1E4E79', type: D.ShadingType.CLEAR },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: 'Оцінка', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })]
+        }),
+        new D.TableCell({
+          borders: hdrBorders, width: { size: 2660, type: D.WidthType.DXA },
+          shading: { fill: '1E4E79', type: D.ShadingType.CLEAR },
+          margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Викладач', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })]
+        }),
+      ]
+    }));
+
+    subjects.forEach((subj, i) => {
+      const g = s.grades[i];
+      const fill = g !== null ? gc(g) : 'F5F5F5';
+      tableRows.push(new D.TableRow({
+        children: [
+          new D.TableCell({
+            borders, width: { size: 6400, type: D.WidthType.DXA },
+            shading: { fill, type: D.ShadingType.CLEAR },
+            margins: { top: 70, bottom: 70, left: 120, right: 120 },
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: subj, size: 20, font: 'Arial' })] })]
+          }),
+          new D.TableCell({
+            borders, width: { size: 1300, type: D.WidthType.DXA },
+            shading: { fill, type: D.ShadingType.CLEAR },
+            margins: { top: 70, bottom: 70, left: 120, right: 120 },
+            children: [new D.Paragraph({
+              alignment: D.AlignmentType.CENTER,
+              children: [new D.TextRun({
+                text: g !== null ? String(g) : '—',
+                bold: g !== null, size: 22, font: 'Arial',
+                color: g === 5 ? '1A6B1A' : g === 3 ? 'C04000' : '1A1A1A'
+              })]
+            })]
+          }),
+          new D.TableCell({
+            borders, width: { size: 2660, type: D.WidthType.DXA },
+            shading: { fill, type: D.ShadingType.CLEAR },
+            margins: { top: 70, bottom: 70, left: 120, right: 120 },
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: teachers[i] || '', size: 18, font: 'Arial', italics: true })] })]
+          }),
+        ]
+      }));
+    });
+
+    if (hasGrades && s.avg) {
+      tableRows.push(new D.TableRow({
+        children: [
+          new D.TableCell({
+            borders: hdrBorders, width: { size: 6400, type: D.WidthType.DXA },
+            shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR },
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Середній бал', bold: true, size: 20, font: 'Arial' })] })]
+          }),
+          new D.TableCell({
+            borders: hdrBorders, width: { size: 1300, type: D.WidthType.DXA },
+            shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR },
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: s.avg, bold: true, size: 22, font: 'Arial', color: '1E4E79' })] })]
+          }),
+          new D.TableCell({
+            borders: hdrBorders, width: { size: 2660, type: D.WidthType.DXA },
+            shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR },
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: [new D.Paragraph({ children: [new D.TextRun('')] })]
+          }),
+        ]
+      }));
+    }
+
+    const elems = [
+      new D.Paragraph({
+        spacing: { before: 0, after: 80 },
+        children: [new D.TextRun({ text: 'Запорізький авіаційний фаховий коледж ім. О. Г. Івченка', size: 18, font: 'Arial', color: '666666' })]
+      }),
+      new D.Paragraph({
+        spacing: { before: 0, after: 200 },
+        border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: '1E4E79', space: 1 } },
+        children: [
+          new D.TextRun({ text: 'Виписка оцінок: ', size: 26, font: 'Arial', color: '1E4E79' }),
+          new D.TextRun({ text: s.name, size: 26, bold: true, font: 'Arial', color: '1A1A1A' }),
+        ]
+      }),
+      new D.Table({
+        width: { size: 10360, type: D.WidthType.DXA },
+        columnWidths: [6400, 1300, 2660],
+        rows: tableRows
+      }),
+      ...(!hasGrades ? [new D.Paragraph({
+        spacing: { before: 160, after: 0 },
+        children: [new D.TextRun({ text: 'Оцінки відсутні (студент не атестований)', size: 20, font: 'Arial', italics: true, color: '999999' })]
+      })] : []),
+    ];
+
+    if (!isLast) elems.push(new D.Paragraph({ children: [new D.PageBreak()] }));
+    return elems;
+  }
+
+  const allChildren = [];
+  students.forEach((s, i) => makeSlip(s, i === students.length - 1).forEach(el => allChildren.push(el)));
+
+  const doc = new D.Document({
+    styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 11906, height: 16838 },
+          margin: { top: 1000, right: 1000, bottom: 1000, left: 1200 }
+        }
+      },
+      children: allChildren
+    }]
+  });
+
+  D.Packer.toBlob(doc).then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'atestatsia_vypysky.docx';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+</script>
+</body>
+</html>
