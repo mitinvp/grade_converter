@@ -17,9 +17,9 @@
     --text3: #9E9A93;
     --accent: #1A3F6F;
     --accent-l: #E6EEF8;
-    --g5: #1A6B1A; --g5bg: #D6F0D6;
-    --g4: #7A6000; --g4bg: #FFF9CC;
-    --g3: #C04000; --g3bg: #FFE5CC;
+    --g-hi: #1A6B1A;  --g-hibg: #D6F0D6;
+    --g-mid: #7A6000; --g-midbg: #FFF9CC;
+    --g-lo: #C04000;  --g-lobg: #FFE5CC;
     --red: #C0202A; --redbg: #FDEAEA;
     --green: #1A6B1A; --greenbg: #D6F0D6;
   }
@@ -192,15 +192,57 @@
     font-weight: 600; font-size: 13px;
     font-family: 'IBM Plex Mono', monospace;
   }
-  .g5 { background: var(--g5bg); color: var(--g5); }
-  .g4 { background: var(--g4bg); color: var(--g4); }
-  .g3 { background: var(--g3bg); color: var(--g3); }
+  .g-hi  { background: var(--g-hibg);  color: var(--g-hi); }
+  .g-mid { background: var(--g-midbg); color: var(--g-mid); }
+  .g-lo  { background: var(--g-lobg);  color: var(--g-lo); }
   .gx { color: var(--text3); font-size: 15px; }
 
   .avg-val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
-  .avg5 { color: var(--g5); }
-  .avg4 { color: var(--g4); }
-  .avg3 { color: var(--g3); }
+  .avg-hi  { color: var(--g-hi); }
+  .avg-mid { color: var(--g-mid); }
+  .avg-lo  { color: var(--g-lo); }
+
+  /* Progress overlay */
+  #progress-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  #progress-overlay.show { display: flex; }
+  .progress-box {
+    background: var(--surface); border-radius: 12px;
+    padding: 2rem 2.5rem; text-align: center; min-width: 260px;
+  }
+  .progress-bar-wrap { background: var(--surface2); border-radius: 20px; height: 8px; margin-top: 1rem; overflow: hidden; }
+  .progress-bar { height: 8px; background: var(--accent); border-radius: 20px; transition: width .2s; width: 0%; }
+
+  /* Preview modal */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    align-items: flex-start; justify-content: center;
+    z-index: 200; padding: 2rem 1rem; overflow-y: auto;
+  }
+  #modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--surface); border-radius: 12px;
+    padding: 2rem; max-width: 700px; width: 100%; position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: var(--surface2); border: none; border-radius: 6px;
+    padding: 4px 10px; cursor: pointer; font-size: 18px; line-height: 1;
+    color: var(--text2);
+  }
+  .modal-close:hover { background: var(--border); }
+  .preview-slip { font-family: Arial, sans-serif; }
+  .preview-slip .ps-college { font-size: 11px; color: #666; margin-bottom: 4px; }
+  .preview-slip .ps-title { font-size: 17px; font-weight: bold; color: #1A3F6F; border-bottom: 2px solid #1A3F6F; padding-bottom: 6px; margin-bottom: 14px; }
+  .preview-slip table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .preview-slip th { background: #1E4E79; color: white; padding: 7px 10px; text-align: left; }
+  .preview-slip td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+  .preview-slip .avg-row td { background: #D0E4F5; font-weight: bold; }
+  .preview-slip .no-grade { color: #aaa; }
 
   .badge {
     font-size: 10px; font-weight: 600;
@@ -231,6 +273,21 @@
 </head>
 <body>
 
+<div id="progress-overlay">
+  <div class="progress-box">
+    <div style="font-weight:600;font-size:15px" id="prog-label">Генерація DOCX…</div>
+    <div style="font-size:13px;color:var(--text2);margin-top:.3rem" id="prog-sub"></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar"></div></div>
+  </div>
+</div>
+
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
 <header>
   <div>
     <div class="logo">ЗАФК · Атестація</div>
@@ -257,9 +314,9 @@
         <option value="ok">Тільки атестовані</option>
         <option value="no">Без оцінок</option>
       </select>
+      <input type="text" id="dateField" placeholder="Дата (напр. травень 2026)" style="min-width:170px">
       <button class="btn btn-ghost" onclick="resetFile()">↩ Новий файл</button>
       <button class="btn btn-accent" onclick="generateDocx()">⬇ Завантажити DOCX</button>
-      <button class="btn btn-ghost" onclick="window.print()">🖨 Друкувати</button>
     </div>
 
     <div class="top-bar">
@@ -20396,8 +20453,9 @@ var __async = (__this, __arguments, generator) => {
 
 </script>
 <script>
-let students = [], subjects = [], teachers = [];
+let students = [], subjects = [], teachers = [], groupName = '';
 
+// ── CSV helpers ──────────────────────────────────────────────────────────────
 function splitCSV(line) {
   const res = []; let cur = ''; let inQ = false;
   for (const c of line) {
@@ -20412,14 +20470,18 @@ function splitCSV(line) {
 function parseCSV(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l);
   const cols = splitCSV(lines[0]);
-  subjects = cols.slice(2, cols.length - 1);
+  // subjects: all columns between name (col 1) and last (avg)
+  subjects = cols.slice(2, cols.length - 1).map(s => s.trim());
 
-  const tRow = lines.find(l => l.startsWith(',викладачі') || l.includes('викладачі'));
-  teachers = subjects.map((_, i) => {
-    if (!tRow) return '';
-    const tc = splitCSV(tRow);
-    return (tc[i + 2] || '').trim();
-  });
+  // Find teacher row — may start with empty cell then "викладачі"
+  const tRowIdx = lines.findIndex(l => /викладач/i.test(l));
+  if (tRowIdx !== -1) {
+    const tc = splitCSV(lines[tRowIdx]);
+    // tc[0] = empty, tc[1] = "викладачі", tc[2..n-1] = teachers per subject
+    teachers = subjects.map((_, i) => (tc[i + 2] || '').trim());
+  } else {
+    teachers = subjects.map(() => '');
+  }
 
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
@@ -20428,19 +20490,50 @@ function parseCSV(text) {
     if (!no || !/^\d/.test(no)) break;
     const name = parts[1]?.trim() || '';
     const grades = subjects.map((_, j) => {
-      const v = parts[j + 2]?.trim();
+      const v = (parts[j + 2] || '').trim();
       const n = parseInt(v);
       return isNaN(n) ? null : n;
     });
-    const avgRaw = parts[parts.length - 1]?.trim();
+    const avgRaw = (parts[parts.length - 1] || '').trim();
     const avg = (avgRaw && avgRaw !== '#DIV/0!') ? avgRaw : null;
     rows.push({ no, name, grades, avg });
   }
   return rows;
 }
 
+// ── Grade helpers (12-point scale) ──────────────────────────────────────────
+function gradeClass(g) {
+  if (g === null) return null;
+  if (g >= 10) return 'g-hi';
+  if (g >= 7)  return 'g-mid';
+  return 'g-lo';
+}
+function gradeBgHex(g) {
+  if (g === null) return 'F5F5F5';
+  if (g >= 10) return 'D6F0D6';
+  if (g >= 7)  return 'FFF9CC';
+  return 'FFE5CC';
+}
+function gradeColorHex(g) {
+  if (g >= 10) return '1A6B1A';
+  if (g >= 7)  return '7A6000';
+  return 'C04000';
+}
+function gradeHtml(g) {
+  if (g === null) return '<span class="gx">—</span>';
+  return `<span class="grade ${gradeClass(g)}">${g}</span>`;
+}
+function avgHtml(a) {
+  if (!a) return '<span class="gx">—</span>';
+  const n = parseFloat(a.replace(',', '.'));
+  const cls = n >= 9 ? 'avg-hi' : n >= 6 ? 'avg-mid' : 'avg-lo';
+  return `<span class="avg-val ${cls}">${a}</span>`;
+}
+
+// ── File loading ─────────────────────────────────────────────────────────────
 document.getElementById('fi').onchange = function(e) {
   const f = e.target.files[0]; if (!f) return;
+  groupName = f.name.replace(/\.csv$/i, '').replace(/.*[-_]/, '').trim();
   const r = new FileReader();
   r.onload = ev => loadData(ev.target.result);
   r.readAsText(f, 'UTF-8');
@@ -20452,7 +20545,9 @@ dz.ondragleave = () => dz.classList.remove('over');
 dz.ondrop = e => {
   e.preventDefault(); dz.classList.remove('over');
   const f = e.dataTransfer.files[0];
-  if (f) { const r = new FileReader(); r.onload = ev => loadData(ev.target.result); r.readAsText(f, 'UTF-8'); }
+  if (!f) return;
+  groupName = f.name.replace(/\.csv$/i, '').replace(/.*[-_]/, '').trim();
+  const r = new FileReader(); r.onload = ev => loadData(ev.target.result); r.readAsText(f, 'UTF-8');
 };
 
 function loadData(text) {
@@ -20472,23 +20567,10 @@ function loadData(text) {
   const hr = document.getElementById('thead-row');
   let h = '<th>#</th><th class="name-col">ПІБ студента</th>';
   subjects.forEach(s => h += `<th title="${s}">${s.length > 7 ? s.slice(0,7)+'…' : s}</th>`);
-  h += '<th class="avg-col">Серед.</th><th>Статус</th>';
+  h += '<th class="avg-col">Серед.</th><th></th>';
   hr.innerHTML = h;
 
   renderTable();
-}
-
-function gradeHtml(g) {
-  if (g === null) return '<span class="gx">—</span>';
-  const cls = g >= 5 ? 'g5' : g >= 4 ? 'g4' : 'g3';
-  return `<span class="grade ${cls}">${g}</span>`;
-}
-
-function avgHtml(a) {
-  if (!a) return '<span class="gx">—</span>';
-  const n = parseFloat(a.replace(',', '.'));
-  const cls = n >= 4.5 ? 'avg5' : n >= 3.5 ? 'avg4' : 'avg3';
-  return `<span class="avg-val ${cls}">${a}</span>`;
 }
 
 function renderTable() {
@@ -20509,143 +20591,111 @@ function renderTable() {
       <td class="name-td">${s.name}</td>
       ${s.grades.map(g => `<td>${gradeHtml(g)}</td>`).join('')}
       <td>${avgHtml(s.avg)}</td>
-      <td>${s.avg ? '<span class="badge badge-ok">атест.</span>' : '<span class="badge badge-no">відсутній</span>'}</td>
+      <td><button class="btn btn-ghost" style="padding:3px 8px;font-size:11px" onclick="previewStudent(${students.indexOf(s)})">👁</button></td>
     </tr>`).join('');
 }
 
 function resetFile() {
-  students = []; subjects = []; teachers = [];
+  students = []; subjects = []; teachers = []; groupName = '';
   document.getElementById('drop').style.display = '';
   document.getElementById('app').style.display = 'none';
   document.getElementById('fi').value = '';
 }
 
-// ─── DOCX GENERATION ────────────────────────────────────────────────────────
+// ── Preview modal ────────────────────────────────────────────────────────────
+function previewStudent(idx) {
+  const s = students[idx];
+  const dateStr = document.getElementById('dateField').value || '';
+  let rows = subjects.map((subj, i) => {
+    const g = s.grades[i];
+    const bg = g !== null ? gradeBgHex(g) : 'FAFAFA';
+    return `<tr style="background:#${bg}">
+      <td>${subj}</td>
+      <td style="text-align:center;font-weight:600">${g !== null ? g : '<span class="no-grade">—</span>'}</td>
+      <td style="font-style:italic;color:#555">${teachers[i] || ''}</td>
+    </tr>`;
+  }).join('');
+  if (s.avg) rows += `<tr class="avg-row"><td>Середній бал</td><td style="text-align:center">${s.avg}</td><td></td></tr>`;
 
-function generateDocx() {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="preview-slip">
+      <div class="ps-college">Запорізький авіаційний фаховий коледж ім. О. Г. Івченка${groupName ? ' · ' + groupName : ''}${dateStr ? ' · ' + dateStr : ''}</div>
+      <div class="ps-title">Виписка оцінок: ${s.name}</div>
+      <table>
+        <thead><tr><th>Дисципліна</th><th style="width:80px">Оцінка</th><th>Викладач</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+
+// ── DOCX generation ──────────────────────────────────────────────────────────
+async function generateDocx() {
   const D = docx;
-  const border = { style: D.BorderStyle.SINGLE, size: 4, color: '2E5F8A' };
-  const borders = { top: border, bottom: border, left: border, right: border };
-  const hdrBorder = { style: D.BorderStyle.SINGLE, size: 4, color: '1A3F6F' };
-  const hdrBorders = { top: hdrBorder, bottom: hdrBorder, left: hdrBorder, right: hdrBorder };
+  const dateStr = document.getElementById('dateField').value || '';
+  const collegeStr = 'Запорізький авіаційний фаховий коледж ім. О. Г. Івченка';
+  const subheader = [groupName, dateStr].filter(Boolean).join(' · ');
 
-  function gc(g) {
-    if (g === 5) return 'D6F0D6';
-    if (g === 4) return 'FFF9CC';
-    if (g === 3) return 'FFE5CC';
-    return 'F5F5F5';
-  }
+  const overlay = document.getElementById('progress-overlay');
+  const bar = document.getElementById('prog-bar');
+  const sub = document.getElementById('prog-sub');
+  overlay.classList.add('show');
+
+  const border  = { style: D.BorderStyle.SINGLE, size: 4, color: '2E5F8A' };
+  const borders = { top: border, bottom: border, left: border, right: border };
+  const hb      = { style: D.BorderStyle.SINGLE, size: 4, color: '1A3F6F' };
+  const hborders = { top: hb, bottom: hb, left: hb, right: hb };
 
   function makeSlip(s, isLast) {
     const hasGrades = s.grades.some(g => g !== null);
-
-    const tableRows = [];
+    const rows = [];
 
     // header row
-    tableRows.push(new D.TableRow({
-      children: [
-        new D.TableCell({
-          borders: hdrBorders, width: { size: 6400, type: D.WidthType.DXA },
-          shading: { fill: '1E4E79', type: D.ShadingType.CLEAR },
-          margins: { top: 80, bottom: 80, left: 120, right: 120 },
-          children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Дисципліна', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })]
-        }),
-        new D.TableCell({
-          borders: hdrBorders, width: { size: 1300, type: D.WidthType.DXA },
-          shading: { fill: '1E4E79', type: D.ShadingType.CLEAR },
-          margins: { top: 80, bottom: 80, left: 120, right: 120 },
-          children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: 'Оцінка', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })]
-        }),
-        new D.TableCell({
-          borders: hdrBorders, width: { size: 2660, type: D.WidthType.DXA },
-          shading: { fill: '1E4E79', type: D.ShadingType.CLEAR },
-          margins: { top: 80, bottom: 80, left: 120, right: 120 },
-          children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Викладач', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })]
-        }),
-      ]
-    }));
+    rows.push(new D.TableRow({ children: [
+      new D.TableCell({ borders: hborders, width: { size: 6400, type: D.WidthType.DXA }, shading: { fill: '1E4E79', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Дисципліна', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })] }),
+      new D.TableCell({ borders: hborders, width: { size: 1200, type: D.WidthType.DXA }, shading: { fill: '1E4E79', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: 'Оцінка', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })] }),
+      new D.TableCell({ borders: hborders, width: { size: 2760, type: D.WidthType.DXA }, shading: { fill: '1E4E79', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Викладач', bold: true, color: 'FFFFFF', size: 20, font: 'Arial' })] })] }),
+    ]}));
 
     subjects.forEach((subj, i) => {
       const g = s.grades[i];
-      const fill = g !== null ? gc(g) : 'F5F5F5';
-      tableRows.push(new D.TableRow({
-        children: [
-          new D.TableCell({
-            borders, width: { size: 6400, type: D.WidthType.DXA },
-            shading: { fill, type: D.ShadingType.CLEAR },
-            margins: { top: 70, bottom: 70, left: 120, right: 120 },
-            children: [new D.Paragraph({ children: [new D.TextRun({ text: subj, size: 20, font: 'Arial' })] })]
-          }),
-          new D.TableCell({
-            borders, width: { size: 1300, type: D.WidthType.DXA },
-            shading: { fill, type: D.ShadingType.CLEAR },
-            margins: { top: 70, bottom: 70, left: 120, right: 120 },
-            children: [new D.Paragraph({
-              alignment: D.AlignmentType.CENTER,
-              children: [new D.TextRun({
-                text: g !== null ? String(g) : '—',
-                bold: g !== null, size: 22, font: 'Arial',
-                color: g === 5 ? '1A6B1A' : g === 3 ? 'C04000' : '1A1A1A'
-              })]
-            })]
-          }),
-          new D.TableCell({
-            borders, width: { size: 2660, type: D.WidthType.DXA },
-            shading: { fill, type: D.ShadingType.CLEAR },
-            margins: { top: 70, bottom: 70, left: 120, right: 120 },
-            children: [new D.Paragraph({ children: [new D.TextRun({ text: teachers[i] || '', size: 18, font: 'Arial', italics: true })] })]
-          }),
-        ]
-      }));
+      const fill = gradeBgHex(g);
+      const gColor = g !== null ? gradeColorHex(g) : '999999';
+      rows.push(new D.TableRow({ children: [
+        new D.TableCell({ borders, width: { size: 6400, type: D.WidthType.DXA }, shading: { fill, type: D.ShadingType.CLEAR }, margins: { top: 70, bottom: 70, left: 120, right: 120 },
+          children: [new D.Paragraph({ children: [new D.TextRun({ text: subj, size: 20, font: 'Arial' })] })] }),
+        new D.TableCell({ borders, width: { size: 1200, type: D.WidthType.DXA }, shading: { fill, type: D.ShadingType.CLEAR }, margins: { top: 70, bottom: 70, left: 120, right: 120 },
+          children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: g !== null ? String(g) : '—', bold: g !== null, size: 22, font: 'Arial', color: gColor })] })] }),
+        new D.TableCell({ borders, width: { size: 2760, type: D.WidthType.DXA }, shading: { fill, type: D.ShadingType.CLEAR }, margins: { top: 70, bottom: 70, left: 120, right: 120 },
+          children: [new D.Paragraph({ children: [new D.TextRun({ text: teachers[i] || '', size: 18, font: 'Arial', italics: true })] })] }),
+      ]}));
     });
 
     if (hasGrades && s.avg) {
-      tableRows.push(new D.TableRow({
-        children: [
-          new D.TableCell({
-            borders: hdrBorders, width: { size: 6400, type: D.WidthType.DXA },
-            shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR },
-            margins: { top: 80, bottom: 80, left: 120, right: 120 },
-            children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Середній бал', bold: true, size: 20, font: 'Arial' })] })]
-          }),
-          new D.TableCell({
-            borders: hdrBorders, width: { size: 1300, type: D.WidthType.DXA },
-            shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR },
-            margins: { top: 80, bottom: 80, left: 120, right: 120 },
-            children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: s.avg, bold: true, size: 22, font: 'Arial', color: '1E4E79' })] })]
-          }),
-          new D.TableCell({
-            borders: hdrBorders, width: { size: 2660, type: D.WidthType.DXA },
-            shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR },
-            margins: { top: 80, bottom: 80, left: 120, right: 120 },
-            children: [new D.Paragraph({ children: [new D.TextRun('')] })]
-          }),
-        ]
-      }));
+      rows.push(new D.TableRow({ children: [
+        new D.TableCell({ borders: hborders, width: { size: 6400, type: D.WidthType.DXA }, shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Середній бал', bold: true, size: 20, font: 'Arial' })] })] }),
+        new D.TableCell({ borders: hborders, width: { size: 1200, type: D.WidthType.DXA }, shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: s.avg, bold: true, size: 22, font: 'Arial', color: '1E4E79' })] })] }),
+        new D.TableCell({ borders: hborders, width: { size: 2760, type: D.WidthType.DXA }, shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
+          children: [new D.Paragraph({ children: [new D.TextRun('')] })] }),
+      ]}));
     }
 
     const elems = [
-      new D.Paragraph({
-        spacing: { before: 0, after: 80 },
-        children: [new D.TextRun({ text: 'Запорізький авіаційний фаховий коледж ім. О. Г. Івченка', size: 18, font: 'Arial', color: '666666' })]
-      }),
-      new D.Paragraph({
-        spacing: { before: 0, after: 200 },
-        border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: '1E4E79', space: 1 } },
+      new D.Paragraph({ spacing: { before: 0, after: 60 }, children: [new D.TextRun({ text: collegeStr, size: 18, font: 'Arial', color: '666666' })] }),
+      ...(subheader ? [new D.Paragraph({ spacing: { before: 0, after: 60 }, children: [new D.TextRun({ text: subheader, size: 18, font: 'Arial', color: '888888' })] })] : []),
+      new D.Paragraph({ spacing: { before: 0, after: 200 }, border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: '1E4E79', space: 1 } },
         children: [
           new D.TextRun({ text: 'Виписка оцінок: ', size: 26, font: 'Arial', color: '1E4E79' }),
           new D.TextRun({ text: s.name, size: 26, bold: true, font: 'Arial', color: '1A1A1A' }),
-        ]
-      }),
-      new D.Table({
-        width: { size: 10360, type: D.WidthType.DXA },
-        columnWidths: [6400, 1300, 2660],
-        rows: tableRows
-      }),
-      ...(!hasGrades ? [new D.Paragraph({
-        spacing: { before: 160, after: 0 },
-        children: [new D.TextRun({ text: 'Оцінки відсутні (студент не атестований)', size: 20, font: 'Arial', italics: true, color: '999999' })]
-      })] : []),
+        ] }),
+      new D.Table({ width: { size: 10360, type: D.WidthType.DXA }, columnWidths: [6400, 1200, 2760], rows }),
+      ...(!hasGrades ? [new D.Paragraph({ spacing: { before: 160, after: 0 }, children: [new D.TextRun({ text: 'Оцінки відсутні (студент не атестований)', size: 20, font: 'Arial', italics: true, color: '999999' })] })] : []),
     ];
 
     if (!isLast) elems.push(new D.Paragraph({ children: [new D.PageBreak()] }));
@@ -20653,29 +20703,28 @@ function generateDocx() {
   }
 
   const allChildren = [];
-  students.forEach((s, i) => makeSlip(s, i === students.length - 1).forEach(el => allChildren.push(el)));
+  for (let i = 0; i < students.length; i++) {
+    sub.textContent = `${students[i].name} (${i + 1}/${students.length})`;
+    bar.style.width = Math.round((i / students.length) * 100) + '%';
+    await new Promise(r => setTimeout(r, 0)); // yield to UI
+    makeSlip(students[i], i === students.length - 1).forEach(el => allChildren.push(el));
+  }
+  bar.style.width = '100%';
+  sub.textContent = 'Пакуємо файл…';
 
   const doc = new D.Document({
     styles: { default: { document: { run: { font: 'Arial', size: 22 } } } },
-    sections: [{
-      properties: {
-        page: {
-          size: { width: 11906, height: 16838 },
-          margin: { top: 1000, right: 1000, bottom: 1000, left: 1200 }
-        }
-      },
-      children: allChildren
-    }]
+    sections: [{ properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1000, right: 1000, bottom: 1000, left: 1200 } } }, children: allChildren }]
   });
 
-  D.Packer.toBlob(doc).then(blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'atestatsia_vypysky.docx';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
+  const blob = await D.Packer.toBlob(doc);
+  overlay.classList.remove('show');
+  bar.style.width = '0%';
+
+  const fname = groupName ? `atestatsia_${groupName}.docx` : 'atestatsia_vypysky.docx';
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = fname; a.click();
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
