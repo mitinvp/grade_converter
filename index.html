@@ -20515,22 +20515,41 @@ function parseCSV(text) {
   return rows;
 }
 
-// ── Grade helpers (12-point scale) ──────────────────────────────────────────
-function gradeClass(g) {
+// ── Grade scale auto-detection ───────────────────────────────────────────────
+let scale = 12; // detected after loading: 5 or 12
+
+function detectScale(students) {
+  const max = Math.max(...students.flatMap(s => s.grades).filter(g => g !== null));
+  return max > 5 ? 12 : 5;
+}
+
+// Thresholds per scale
+function gradeLevel(g) {
   if (g === null) return null;
-  if (g >= 10) return 'g-hi';
-  if (g >= 7)  return 'g-mid';
-  return 'g-lo';
+  if (scale === 5) {
+    if (g >= 5) return 'hi';
+    if (g >= 4) return 'mid';
+    return 'lo';
+  } else {
+    if (g >= 10) return 'hi';
+    if (g >= 7)  return 'mid';
+    return 'lo';
+  }
+}
+function gradeClass(g) {
+  const l = gradeLevel(g); return l ? `g-${l}` : null;
 }
 function gradeBgHex(g) {
-  if (g === null) return 'F5F5F5';
-  if (g >= 10) return 'D6F0D6';
-  if (g >= 7)  return 'FFF9CC';
-  return 'FFE5CC';
+  const l = gradeLevel(g);
+  if (l === 'hi')  return 'D6F0D6';
+  if (l === 'mid') return 'FFF9CC';
+  if (l === 'lo')  return 'FFE5CC';
+  return 'F5F5F5';
 }
 function gradeColorHex(g) {
-  if (g >= 10) return '1A6B1A';
-  if (g >= 7)  return '7A6000';
+  const l = gradeLevel(g);
+  if (l === 'hi')  return '1A6B1A';
+  if (l === 'mid') return '7A6000';
   return 'C04000';
 }
 function gradeHtml(g) {
@@ -20540,7 +20559,9 @@ function gradeHtml(g) {
 function avgHtml(a) {
   if (!a) return '<span class="gx">—</span>';
   const n = parseFloat(a.replace(',', '.'));
-  const cls = n >= 9 ? 'avg-hi' : n >= 6 ? 'avg-mid' : 'avg-lo';
+  let cls;
+  if (scale === 5) cls = n >= 4.5 ? 'avg-hi' : n >= 3.5 ? 'avg-mid' : 'avg-lo';
+  else             cls = n >= 9   ? 'avg-hi' : n >= 6   ? 'avg-mid' : 'avg-lo';
   return `<span class="avg-val ${cls}">${a}</span>`;
 }
 
@@ -20595,16 +20616,19 @@ dz.ondrop = e => {
 
 function loadData(text) {
   students = parseCSV(text);
+  scale = detectScale(students);
   const ok = students.filter(s => s.avg).length;
 
   document.getElementById('drop').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
+  const scaleBadge = `<div class="stat"><div class="stat-label">Шкала</div><div class="stat-val" style="font-size:16px;padding-top:4px">${scale}-бальна</div></div>`;
   document.getElementById('statsRow').innerHTML = `
     <div class="stat"><div class="stat-label">Студентів</div><div class="stat-val">${students.length}</div></div>
     <div class="stat"><div class="stat-label">Атестовано</div><div class="stat-val">${ok}</div></div>
     <div class="stat"><div class="stat-label">Не атестовано</div><div class="stat-val">${students.length - ok}</div></div>
     <div class="stat"><div class="stat-label">Предметів</div><div class="stat-val">${subjects.length}</div></div>
+    ${scaleBadge}
   `;
 
   const hr = document.getElementById('thead-row');
