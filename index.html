@@ -20468,16 +20468,20 @@ function splitCSV(line) {
 }
 
 function parseCSV(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-  const cols = splitCSV(lines[0]);
-  // subjects: all columns between name (col 1) and last (avg)
-  subjects = cols.slice(2, cols.length - 1).map(s => s.trim());
+  // Normalize line endings
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+    .split('\n').map(l => l.trim()).filter(l => l);
 
-  // Find teacher row — may start with empty cell then "викладачі"
+  const cols = splitCSV(lines[0]);
+  // subjects: columns 2 .. (last-1), last column is "Середній бал"
+  const subjCount = cols.length - 3; // minus №, ПІБ, Середній бал
+  subjects = cols.slice(2, 2 + subjCount).map(s => s.trim());
+
+  // Find teacher row — search by keyword, robust to leading comma
   const tRowIdx = lines.findIndex(l => /викладач/i.test(l));
   if (tRowIdx !== -1) {
     const tc = splitCSV(lines[tRowIdx]);
-    // tc[0] = empty, tc[1] = "викладачі", tc[2..n-1] = teachers per subject
+    // tc[0]=empty, tc[1]="викладачі", tc[2..2+subjCount-1]=teachers
     teachers = subjects.map((_, i) => (tc[i + 2] || '').trim());
   } else {
     teachers = subjects.map(() => '');
@@ -20494,8 +20498,9 @@ function parseCSV(text) {
       const n = parseInt(v);
       return isNaN(n) ? null : n;
     });
+    // avg is always the last column
     const avgRaw = (parts[parts.length - 1] || '').trim();
-    const avg = (avgRaw && avgRaw !== '#DIV/0!') ? avgRaw : null;
+    const avg = (avgRaw && avgRaw !== '#DIV/0!' && !/^[a-z#]/i.test(avgRaw)) ? avgRaw : null;
     rows.push({ no, name, grades, avg });
   }
   return rows;
@@ -20531,12 +20536,43 @@ function avgHtml(a) {
 }
 
 // ── File loading ─────────────────────────────────────────────────────────────
+function extractGroupName(filename) {
+  // Remove extension
+  let name = filename.replace(/\.csv$/i, '');
+  // Try to find group pattern like КІ-23, ПК-21, МТ-11(1) etc.
+  const match = name.match(/([А-ЯҐЄІЇа-яґєії]{1,4}[-–]\d{2,3}(\s*\(\d+\))?)/u);
+  if (match) return match[1].trim();
+  // Fallback: take everything after last dash or underscore, but only if it looks like a group
+  const parts = name.split(/[-_–]/);
+  const last = parts[parts.length - 1].trim();
+  // If last part is just a number, take two last parts
+  if (/^\d+$/.test(last) && parts.length >= 2) {
+    return (parts[parts.length - 2] + '-' + last).trim();
+  }
+  return last || name;
+}
+
+function readFile(file) {
+  groupName = extractGroupName(file.name);
+  // Try UTF-8 first, fall back to Windows-1251
+  const tryRead = (encoding) => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = reject;
+    r.readAsText(file, encoding);
+  });
+  tryRead('UTF-8').then(text => {
+    // If text has replacement chars (UTF-8 failed on win1251 file), retry
+    if (text.includes('\uFFFD')) {
+      return tryRead('windows-1251').then(loadData);
+    }
+    loadData(text);
+  });
+}
+
 document.getElementById('fi').onchange = function(e) {
   const f = e.target.files[0]; if (!f) return;
-  groupName = f.name.replace(/\.csv$/i, '').replace(/.*[-_]/, '').trim();
-  const r = new FileReader();
-  r.onload = ev => loadData(ev.target.result);
-  r.readAsText(f, 'UTF-8');
+  readFile(f);
 };
 
 const dz = document.getElementById('drop');
@@ -20545,9 +20581,7 @@ dz.ondragleave = () => dz.classList.remove('over');
 dz.ondrop = e => {
   e.preventDefault(); dz.classList.remove('over');
   const f = e.dataTransfer.files[0];
-  if (!f) return;
-  groupName = f.name.replace(/\.csv$/i, '').replace(/.*[-_]/, '').trim();
-  const r = new FileReader(); r.onload = ev => loadData(ev.target.result); r.readAsText(f, 'UTF-8');
+  if (f) readFile(f);
 };
 
 function loadData(text) {
