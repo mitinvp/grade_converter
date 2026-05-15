@@ -44,13 +44,13 @@
   }
   header .logo {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: .06em;
     opacity: .7;
     text-transform: uppercase;
   }
-  header h1 { font-size: 17px; font-weight: 600; }
+  header h1 { font-size: 22px; font-weight: 600; }
 
   main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 
@@ -70,23 +70,23 @@
   }
   .dropzone input { display: none; }
   .drop-icon {
-    width: 52px; height: 52px;
+    width: 64px; height: 64px;
     background: var(--accent-l);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    margin: 0 auto 1rem;
+    font-size: 28px;
+    margin: 0 auto 1.1rem;
   }
-  .dropzone h2 { font-size: 16px; font-weight: 600; margin-bottom: .35rem; }
-  .dropzone p { font-size: 13px; color: var(--text2); }
+  .dropzone h2 { font-size: 20px; font-weight: 600; margin-bottom: .4rem; }
+  .dropzone p { font-size: 15px; color: var(--text2); }
   .dropzone .hint {
     margin-top: 1rem;
-    font-size: 12px;
+    font-size: 14px;
     font-family: 'IBM Plex Mono', monospace;
     color: var(--text3);
     background: var(--surface2);
     display: inline-block;
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 4px;
   }
 
@@ -120,8 +120,8 @@
     padding: .6rem 1rem;
     min-width: 110px;
   }
-  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
-  .stat-val { font-size: 24px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; line-height: 1.2; }
+  .stat-label { font-size: 13px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+  .stat-val { font-size: 28px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; line-height: 1.2; }
 
   .controls {
     display: flex;
@@ -132,11 +132,11 @@
   }
   input[type=text], select {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
+    font-size: 15px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 7px 10px;
+    padding: 9px 12px;
     color: var(--text);
     outline: none;
     transition: border-color .12s;
@@ -146,8 +146,8 @@
 
   .btn {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px; font-weight: 500;
-    padding: 7px 14px;
+    font-size: 15px; font-weight: 500;
+    padding: 9px 18px;
     border-radius: 6px;
     cursor: pointer;
     transition: opacity .12s, transform .1s;
@@ -162,12 +162,12 @@
 
   /* TABLE */
   .tbl-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; background: var(--surface); }
   thead tr { background: var(--accent); color: white; }
   th {
-    padding: 9px 10px;
+    padding: 11px 12px;
     font-weight: 500;
-    font-size: 11px;
+    font-size: 13px;
     text-align: center;
     white-space: nowrap;
     position: sticky; top: 0;
@@ -176,7 +176,7 @@
   th.name-col { text-align: left; min-width: 220px; }
   th.avg-col { min-width: 70px; }
   td {
-    padding: 8px 10px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--border);
     text-align: center;
     vertical-align: middle;
@@ -187,17 +187,17 @@
 
   .grade {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 28px; height: 28px;
+    width: 34px; height: 34px;
     border-radius: 6px;
-    font-weight: 600; font-size: 13px;
+    font-weight: 600; font-size: 15px;
     font-family: 'IBM Plex Mono', monospace;
   }
   .g-hi  { background: var(--g-hibg);  color: var(--g-hi); }
   .g-mid { background: var(--g-midbg); color: var(--g-mid); }
   .g-lo  { background: var(--g-lobg);  color: var(--g-lo); }
-  .gx { color: var(--text3); font-size: 15px; }
+  .gx { color: var(--text3); font-size: 18px; }
 
-  .avg-val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .avg-val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 16px; }
   .avg-hi  { color: var(--g-hi); }
   .avg-mid { color: var(--g-mid); }
   .avg-lo  { color: var(--g-lo); }
@@ -245,14 +245,14 @@
   .preview-slip .no-grade { color: #aaa; }
 
   .badge {
-    font-size: 10px; font-weight: 600;
-    padding: 2px 8px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
     text-transform: uppercase; letter-spacing: .03em;
   }
   .badge-ok { background: var(--greenbg); color: var(--green); }
   .badge-no { background: var(--redbg); color: var(--red); }
 
-  .no-rows { padding: 2rem; text-align: center; color: var(--text3); font-size: 14px; }
+  .no-rows { padding: 2rem; text-align: center; color: var(--text3); font-size: 16px; }
 
   /* PRINT / DOCX preview */
   #preview { display: none; }
@@ -275,8 +275,8 @@
 
 <div id="progress-overlay">
   <div class="progress-box">
-    <div style="font-weight:600;font-size:15px" id="prog-label">Генерація DOCX…</div>
-    <div style="font-size:13px;color:var(--text2);margin-top:.3rem" id="prog-sub"></div>
+    <div style="font-weight:600;font-size:17px" id="prog-label">Генерація DOCX…</div>
+    <div style="font-size:14px;color:var(--text2);margin-top:.3rem" id="prog-sub"></div>
     <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar"></div></div>
   </div>
 </div>
@@ -289,9 +289,14 @@
 </div>
 
 <header>
-  <div>
-    <div class="logo">ЗАФК · Атестація</div>
-    <h1>Конвертер виписок оцінок</h1>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+    <div>
+      <div class="logo">ЗАФК · Атестація</div>
+      <h1>Конвертер виписок оцінок</h1>
+    </div>
+    <a href="instruktsiya.html" target="_blank" style="display:inline-flex;align-items:center;gap:.5rem;color:white;text-decoration:none;font-size:16px;font-weight:500;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);padding:10px 20px;border-radius:8px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
+      📖 Інструкція
+    </a>
   </div>
 </header>
 
@@ -20515,18 +20520,26 @@ function parseCSV(text) {
   return rows;
 }
 
-// ── Grade scale auto-detection ───────────────────────────────────────────────
-let scale = 12; // detected after loading: 5 or 12
+// ── Grade scale: per-subject detection ──────────────────────────────────────
+let scale = 12;          // global (for avg coloring)
+let subjectScales = [];  // 5 or 12 per subject index
 
-function detectScale(students) {
-  const max = Math.max(...students.flatMap(s => s.grades).filter(g => g !== null));
-  return max > 5 ? 12 : 5;
+function detectScales(students) {
+  // Global scale for avg
+  const allGrades = students.flatMap(s => s.grades).filter(g => g !== null);
+  scale = allGrades.length && Math.max(...allGrades) > 5 ? 12 : 5;
+
+  // Per-subject scale
+  subjectScales = subjects.map((_, i) => {
+    const vals = students.map(s => s.grades[i]).filter(g => g !== null);
+    if (!vals.length) return scale;
+    return Math.max(...vals) > 5 ? 12 : 5;
+  });
 }
 
-// Thresholds per scale
-function gradeLevel(g) {
+function gradeLevel(g, subjScale) {
   if (g === null) return null;
-  if (scale === 5) {
+  if (subjScale === 5) {
     if (g >= 5) return 'hi';
     if (g >= 4) return 'mid';
     return 'lo';
@@ -20536,25 +20549,26 @@ function gradeLevel(g) {
     return 'lo';
   }
 }
-function gradeClass(g) {
-  const l = gradeLevel(g); return l ? `g-${l}` : null;
+function gradeClass(g, subjIdx) {
+  const l = gradeLevel(g, subjectScales[subjIdx] ?? scale);
+  return l ? `g-${l}` : null;
 }
-function gradeBgHex(g) {
-  const l = gradeLevel(g);
+function gradeBgHex(g, subjIdx) {
+  const l = gradeLevel(g, subjectScales[subjIdx] ?? scale);
   if (l === 'hi')  return 'D6F0D6';
   if (l === 'mid') return 'FFF9CC';
   if (l === 'lo')  return 'FFE5CC';
   return 'F5F5F5';
 }
-function gradeColorHex(g) {
-  const l = gradeLevel(g);
+function gradeColorHex(g, subjIdx) {
+  const l = gradeLevel(g, subjectScales[subjIdx] ?? scale);
   if (l === 'hi')  return '1A6B1A';
   if (l === 'mid') return '7A6000';
   return 'C04000';
 }
-function gradeHtml(g) {
+function gradeHtml(g, subjIdx) {
   if (g === null) return '<span class="gx">—</span>';
-  return `<span class="grade ${gradeClass(g)}">${g}</span>`;
+  return `<span class="grade ${gradeClass(g, subjIdx)}">${g}</span>`;
 }
 function avgHtml(a) {
   if (!a) return '<span class="gx">—</span>';
@@ -20616,13 +20630,15 @@ dz.ondrop = e => {
 
 function loadData(text) {
   students = parseCSV(text);
-  scale = detectScale(students);
+  detectScales(students);
   const ok = students.filter(s => s.avg).length;
+  const mixed = subjectScales.includes(5) && subjectScales.includes(12);
+  const scaleLabel = mixed ? 'змішана' : `${scale}-бальна`;
 
   document.getElementById('drop').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
-  const scaleBadge = `<div class="stat"><div class="stat-label">Шкала</div><div class="stat-val" style="font-size:16px;padding-top:4px">${scale}-бальна</div></div>`;
+  const scaleBadge = `<div class="stat"><div class="stat-label">Шкала</div><div class="stat-val" style="font-size:16px;padding-top:4px">${scaleLabel}</div></div>`;
   document.getElementById('statsRow').innerHTML = `
     <div class="stat"><div class="stat-label">Студентів</div><div class="stat-val">${students.length}</div></div>
     <div class="stat"><div class="stat-label">Атестовано</div><div class="stat-val">${ok}</div></div>
@@ -20654,11 +20670,11 @@ function renderTable() {
   if (!list.length) { tb.innerHTML = '<tr><td colspan="100" class="no-rows">Нічого не знайдено</td></tr>'; return; }
   tb.innerHTML = list.map(s => `
     <tr>
-      <td style="color:var(--text3);font-size:12px">${s.no}</td>
+      <td style="color:var(--text3);font-size:14px">${s.no}</td>
       <td class="name-td">${s.name}</td>
-      ${s.grades.map(g => `<td>${gradeHtml(g)}</td>`).join('')}
+      ${s.grades.map((g, i) => `<td>${gradeHtml(g, i)}</td>`).join('')}
       <td>${avgHtml(s.avg)}</td>
-      <td><button class="btn btn-ghost" style="padding:3px 8px;font-size:11px" onclick="previewStudent(${students.indexOf(s)})">👁</button></td>
+      <td><button class="btn btn-ghost" style="padding:5px 10px;font-size:14px" onclick="previewStudent(${students.indexOf(s)})">👁</button></td>
     </tr>`).join('');
 }
 
@@ -20675,7 +20691,7 @@ function previewStudent(idx) {
   const dateStr = document.getElementById('dateField').value || '';
   let rows = subjects.map((subj, i) => {
     const g = s.grades[i];
-    const bg = g !== null ? gradeBgHex(g) : 'FAFAFA';
+    const bg = g !== null ? gradeBgHex(g, i) : 'FAFAFA';
     return `<tr style="background:#${bg}">
       <td>${subj}</td>
       <td style="text-align:center;font-weight:600">${g !== null ? g : '<span class="no-grade">—</span>'}</td>
@@ -20730,8 +20746,8 @@ async function generateDocx() {
 
     subjects.forEach((subj, i) => {
       const g = s.grades[i];
-      const fill = gradeBgHex(g);
-      const gColor = g !== null ? gradeColorHex(g) : '999999';
+      const fill = gradeBgHex(g, i);
+      const gColor = g !== null ? gradeColorHex(g, i) : '999999';
       rows.push(new D.TableRow({ children: [
         new D.TableCell({ borders, width: { size: 6400, type: D.WidthType.DXA }, shading: { fill, type: D.ShadingType.CLEAR }, margins: { top: 70, bottom: 70, left: 120, right: 120 },
           children: [new D.Paragraph({ children: [new D.TextRun({ text: subj, size: 20, font: 'Arial' })] })] }),
