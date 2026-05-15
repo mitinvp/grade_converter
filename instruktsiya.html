@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Інструкція — Конвертер виписок оцінок</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #F4F2EC;
+    --surface: #FDFCF8;
+    --border: #D8D4C8;
+    --text: #1A1916;
+    --text2: #6B6760;
+    --accent: #1A3F6F;
+    --accent-l: #E6EEF8;
+    --green: #1A6B1A; --greenbg: #D6F0D6;
+    --yellow: #7A6000; --yellowbg: #FFF9CC;
+    --orange: #C04000; --orangebg: #FFE5CC;
+    --red: #C0202A; --redbg: #FDEAEA;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  header {
+    background: var(--accent);
+    color: white;
+    padding: 1.5rem 2.5rem;
+  }
+  header .college { font-size: 12px; opacity: .7; margin-bottom: .25rem; letter-spacing: .03em; }
+  header h1 { font-size: 22px; font-weight: 600; }
+  header .sub { font-size: 13px; opacity: .75; margin-top: .3rem; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+  /* TOC */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .toc-title { font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); margin-bottom: .6rem; }
+  .toc ol { padding-left: 1.2rem; }
+  .toc li { margin: .3rem 0; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 14px; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Sections */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .section-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    font-weight: 600; font-size: 15px;
+    margin-right: .6rem;
+    flex-shrink: 0;
+  }
+  .section-header {
+    display: flex; align-items: center;
+    margin-bottom: 1.2rem;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-header h2 { font-size: 18px; font-weight: 600; }
+
+  /* Steps */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+    counter-increment: step;
+  }
+  .step-num {
+    width: 26px; height: 26px; min-width: 26px;
+    background: var(--accent-l);
+    color: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+    margin-top: 1px;
+  }
+  .step-body { flex: 1; }
+  .step-body strong { color: var(--accent); }
+
+  /* Screenshot mockups */
+  .mockup {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .mockup-bar {
+    background: var(--accent);
+    padding: 8px 14px;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .mockup-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.3); }
+  .mockup-title { color: rgba(255,255,255,.8); font-size: 12px; margin-left: 6px; }
+  .mockup-body { padding: 1rem 1.25rem; font-size: 13px; }
+
+  /* Drop zone illustration */
+  .drop-demo {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text2);
+    background: #FAFAF7;
+  }
+  .drop-demo .icon { font-size: 28px; margin-bottom: .4rem; }
+  .drop-demo .label { font-size: 14px; font-weight: 500; }
+  .drop-demo .hint { font-size: 12px; margin-top: .3rem; color: #aaa; }
+
+  /* Stats demo */
+  .stats-demo { display: flex; gap: .6rem; flex-wrap: wrap; margin: .75rem 0; }
+  .stat-demo {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .4rem .8rem;
+    font-size: 12px;
+  }
+  .stat-demo .sv { font-size: 20px; font-weight: 600; font-family: monospace; }
+
+  /* Grade badges */
+  .grade-row { display: flex; gap: .5rem; flex-wrap: wrap; margin: .6rem 0; align-items: center; }
+  .gb {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 6px;
+    font-weight: 700; font-size: 13px;
+  }
+  .gb-hi  { background: var(--greenbg);  color: var(--green); }
+  .gb-mid { background: var(--yellowbg); color: var(--yellow); }
+  .gb-lo  { background: var(--orangebg); color: var(--orange); }
+  .gb-label { font-size: 12px; color: var(--text2); }
+
+  /* Table demo */
+  .tbl-demo { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl-demo th { background: var(--accent); color: white; padding: 7px 10px; text-align: left; }
+  .tbl-demo td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .tbl-demo tr:last-child td { border-bottom: none; }
+
+  /* Callouts */
+  .callout {
+    border-radius: 8px;
+    padding: .9rem 1.1rem;
+    margin: 1rem 0;
+    display: flex;
+    gap: .7rem;
+    font-size: 14px;
+  }
+  .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .callout-tip  { background: var(--greenbg);  border-left: 3px solid var(--green); }
+  .callout-warn { background: var(--yellowbg); border-left: 3px solid var(--yellow); }
+  .callout-info { background: var(--accent-l); border-left: 3px solid var(--accent); }
+
+  /* Button demos */
+  .btn-demo {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px; font-weight: 500;
+    vertical-align: middle;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-ghost   { background: var(--bg); border: 1px solid var(--border); color: var(--text2); }
+
+  /* Scale table */
+  .scale-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: .75rem 0; }
+  .scale-table th { background: var(--bg); padding: 6px 10px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--border); }
+  .scale-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    color: var(--text2);
+    font-size: 12px;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media print {
+    body { background: white; font-size: 13px; }
+    header { background: #1A3F6F !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .mockup-bar, .tbl-demo th, .section-num { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section { break-inside: avoid; }
+    .container { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="college">Запорізький авіаційний фаховий коледж ім. О. Г. Івченка</div>
+  <h1>Конвертер виписок оцінок</h1>
+  <div class="sub">Інструкція для викладачів · Весняна атестація 2026</div>
+</header>
+
+<div class="container">
+
+  <div class="toc">
+    <div class="toc-title">Зміст</div>
+    <ol>
+      <li><a href="#s1">Що робить конвертер</a></li>
+      <li><a href="#s2">Крок 1 — Відкрити конвертер</a></li>
+      <li><a href="#s3">Крок 2 — Вивантажити CSV з Google Таблиці</a></li>
+      <li><a href="#s4">Крок 3 — Завантажити файл у конвертер</a></li>
+      <li><a href="#s5">Крок 4 — Перевірити дані</a></li>
+      <li><a href="#s6">Крок 5 — Згенерувати DOCX</a></li>
+      <li><a href="#s7">Поширені запитання</a></li>
+    </ol>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <span class="section-num">1</span>
+      <h2>Що робить конвертер</h2>
+    </div>
+    <p>Конвертер перетворює таблицю атестації з Google Таблиць у готовий документ Word (.docx) з індивідуальними виписками оцінок для кожного студента. Один файл — одна сторінка на студента.</p>
+
+    <div style="margin: 1.25rem 0;">
+      <div style="font-size:13px; color:var(--text2); margin-bottom:.5rem; font-weight:500;">Кожна виписка містить:</div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+          <div class="mockup-title">Виписка оцінок — приклад</div>
+        </div>
+        <div class="mockup-body">
+          <div style="font-size:11px; color:#888; margin-bottom:3px;">Запорізький авіаційний фаховий коледж ім. О. Г. Івченка · КІ-23 · травень 2026</div>
+          <div style="font-size:16px; font-weight:700; color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:6px; margin-bottom:10px;">Виписка оцінок: Іванenko Петро Васильович</div>
+          <table class="tbl-demo">
+            <thead><tr><th>Дисципліна</th><th style="width:70px">Оцінка</th><th>Викладач</th></tr></thead>
+            <tbody>
+              <tr style="background:#D6F0D6"><td>Українська мова</td><td style="text-align:center;font-weight:700;color:#1A6B1A">10</td><td style="font-style:italic;color:#555">Дубей</td></tr>
+              <tr style="background:#FFF9CC"><td>Математика</td><td style="text-align:center;font-weight:700;color:#7A6000">8</td><td style="font-style:italic;color:#555">Асламова</td></tr>
+              <tr style="background:#FFE5CC"><td>Біологія</td><td style="text-align:center;font-weight:700;color:#C04000">6</td><td style="font-style:italic;color:#555">Солокова</td></tr>
+              <tr style="background:#F5F5F5"><td>Фізична культура</td><td style="text-align:center;color:#aaa">—</td><td></td></tr>
+              <tr style="background:#D0E4F5"><td><strong>Середній бал</strong></td><td style="text-align:center;font-weight:700;color:#1E4E79">8,0</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <div style="font-size:13px; color:var(--text2); margin-bottom:.5rem; font-weight:500;">Кольорова шкала оцінок (визначається автоматично):</div>
+      <table class="scale-table">
+        <thead><tr><th>Колір</th><th>12-бальна шкала</th><th>5-бальна шкала</th></tr></thead>
+        <tbody>
+          <tr><td><span class="gb gb-hi">10</span> зелений</td><td>10, 11, 12</td><td>5</td></tr>
+          <tr><td><span class="gb gb-mid">7</span> жовтий</td><td>7, 8, 9</td><td>4</td></tr>
+          <tr><td><span class="gb gb-lo">4</span> помаранч.</td><td>1 – 6</td><td>1, 2, 3</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <span class="section-num">2</span>
+      <h2>Крок 1 — Відкрити конвертер</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">Відкрийте браузер (Chrome, Edge або Firefox) та перейдіть за посиланням:<br>
+          <code style="background:var(--bg);padding:4px 10px;border-radius:4px;display:inline-block;margin-top:.4rem;font-size:13px;border:1px solid var(--border)">https://mitinvp.github.io/grade-converter/</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">Ви побачите сторінку з зоною для завантаження файлу. <strong>Інтернет потрібен лише для відкриття сторінки</strong> — після цього все працює у браузері.</div>
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-icon">💡</div>
+      <div>Конвертер працює у будь-якому сучасному браузері на ПК, ноутбуці або планшеті. На телефоні також відкриється, але зручніше користуватись на великому екрані.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <span class="section-num">3</span>
+      <h2>Крок 2 — Вивантажити CSV з Google Таблиці</h2>
+    </div>
+    <p style="margin-bottom:1rem">Конвертер читає файл формату <strong>CSV</strong> — це звичайний текстовий файл з оцінками. Його потрібно зберегти з Google Таблиці.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">Відкрийте таблицю атестації вашої групи в Google Таблицях.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">У верхньому меню натисніть <strong>Файл</strong>.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">Оберіть <strong>Завантажити</strong> → <strong>Файл CSV (.csv)</strong>.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">Файл автоматично збережеться у папку <strong>Завантаження</strong> на вашому комп'ютері.<br>
+        Ім'я файлу буде приблизно таким: <code style="font-size:12px">Атестація_весна_2026_-_КІ-23.csv</code></div>
+      </div>
+    </div>
+    <div class="callout callout-warn">
+      <div class="callout-icon">⚠️</div>
+      <div>Переконайтеся що відкрита <strong>потрібна вкладка</strong> з вашою групою перед збереженням — Google Sheets зберігає лише активну вкладку.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <span class="section-num">4</span>
+      <h2>Крок 3 — Завантажити файл у конвертер</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">На сторінці конвертера ви побачите зону завантаження:</div>
+      </div>
+    </div>
+
+    <div class="mockup" style="max-width:460px; margin: .5rem 0 1.25rem 2.5rem;">
+      <div class="mockup-bar">
+        <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+      </div>
+      <div class="mockup-body">
+        <div class="drop-demo">
+          <div class="icon">📂</div>
+          <div class="label">Завантажте CSV-файл з Google Sheets</div>
+          <div class="hint">Перетягніть файл сюди або натисніть щоб вибрати</div>
+          <div style="margin-top:.6rem;font-size:11px;background:#eee;display:inline-block;padding:3px 8px;border-radius:3px;font-family:monospace">Файл → Завантажити → CSV (.csv)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="steps" style="margin-top:0">
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body"><strong>Варіант А — перетягування:</strong> відкрийте папку Завантаження, знайдіть CSV-файл і перетягніть його мишею на зону завантаження.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body"><strong>Варіант Б — через діалог:</strong> натисніть на зону завантаження, у вікні що відкриється знайдіть CSV-файл і натисніть <strong>Відкрити</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <span class="section-num">5</span>
+      <h2>Крок 4 — Перевірити дані</h2>
+    </div>
+    <p style="margin-bottom:1rem">Після завантаження файлу конвертер відразу покаже таблицю з усіма студентами та статистику:</p>
+
+    <div class="mockup">
+      <div class="mockup-bar">
+        <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+        <div class="mockup-title">Статистика після завантаження</div>
+      </div>
+      <div class="mockup-body">
+        <div class="stats-demo">
+          <div class="stat-demo"><div class="sv">27</div>Студентів</div>
+          <div class="stat-demo"><div class="sv">24</div>Атестовано</div>
+          <div class="stat-demo"><div class="sv">3</div>Не атестовано</div>
+          <div class="stat-demo"><div class="sv">9</div>Предметів</div>
+          <div class="stat-demo"><div class="sv" style="font-size:15px">12-бальна</div>Шкала</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin:1.25rem 0 .75rem; font-weight:500">Що можна зробити перед генерацією:</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">▸</div>
+        <div class="step-body"><strong>Поле «Дата»</strong> — введіть назву атестаційного періоду, наприклад <em>травень 2026</em>. Вона з'явиться у шапці кожної виписки.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">▸</div>
+        <div class="step-body"><strong>Пошук</strong> — введіть прізвище щоб знайти конкретного студента у таблиці.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">▸</div>
+        <div class="step-body"><strong>Фільтр</strong> — оберіть «Тільки атестовані» або «Без оцінок» щоб перевірити дані.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">▸</div>
+        <div class="step-body"><strong>Кнопка 👁</strong> навпроти студента — відкриває попередній перегляд його виписки прямо на сторінці.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">✅</div>
+      <div>Перевірте що шкала визначилась правильно: для 1–2 курсу має бути <strong>12-бальна</strong>, для 3–4 курсу — <strong>5-бальна</strong>. Конвертер визначає шкалу автоматично по максимальній оцінці у файлі.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <span class="section-num">6</span>
+      <h2>Крок 5 — Згенерувати DOCX</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">Натисніть кнопку <span class="btn-demo btn-primary">⬇ Завантажити DOCX</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">З'явиться смужка прогресу з іменем поточного студента — зачекайте кілька секунд.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">Файл автоматично збережеться у папку <strong>Завантаження</strong>. Ім'я файлу міститиме назву групи, наприклад: <code style="font-size:12px">atestatsia_КІ-23.docx</code></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">Відкрийте файл у Word або LibreOffice — кожен студент на окремій сторінці, готово до друку або розсилки батькам.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-icon">📤</div>
+      <div>Щоб надіслати виписку конкретному студенту/батькам — відкрийте DOCX у Word, перейдіть на потрібну сторінку і роздрукуйте або збережіть лише її через <strong>Файл → Друк → Сторінки: [номер]</strong>.</div>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-icon">⚠️</div>
+      <div>Якщо потрібно завантажити іншу групу — натисніть кнопку <span class="btn-demo btn-ghost">↩ Новий файл</span> і повторіть з кроку 2.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <span class="section-num">7</span>
+      <h2>Поширені запитання</h2>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+
+      <div>
+        <div style="font-weight:600;margin-bottom:.3rem">❓ Кнопка «Завантажити DOCX» не реагує</div>
+        <div style="color:var(--text2);font-size:14px">Перевірте чи файл CSV завантажено — таблиця зі студентами має бути видима на сторінці. Якщо ні — перезавантажте сторінку і спробуйте знову.</div>
+      </div>
+
+      <div>
+        <div style="font-weight:600;margin-bottom:.3rem">❓ Викладачі не відображаються у виписці</div>
+        <div style="color:var(--text2);font-size:14px">Перевірте що в таблиці Google Sheets є рядок <strong>«викладачі»</strong> внизу з прізвищами. Якщо рядок є але виписка порожня — зверніться до адміністратора конвертера.</div>
+      </div>
+
+      <div>
+        <div style="font-weight:600;margin-bottom:.3rem">❓ Деякі студенти показані як «без оцінок»</div>
+        <div style="color:var(--text2);font-size:14px">Це нормально якщо студент не проходив атестацію або відсутній. Конвертер все одно створить для нього сторінку з приміткою «не атестований».</div>
+      </div>
+
+      <div>
+        <div style="font-weight:600;margin-bottom:.3rem">❓ Шкала визначилась неправильно</div>
+        <div style="color:var(--text2);font-size:14px">Конвертер дивиться на максимальну оцінку у файлі. Якщо у вас змішані предмети (частина 12-бальні, частина 5-бальні), шкала визначиться як 12-бальна — і це правильно, бо кольори налаштовані для обох шкал одночасно.</div>
+      </div>
+
+      <div>
+        <div style="font-weight:600;margin-bottom:.3rem">❓ Файл дуже довго генерується</div>
+        <div style="color:var(--text2);font-size:14px">Для групи з 30 студентів генерація займає 3–10 секунд залежно від комп'ютера. Це нормально — зачекайте поки смужка прогресу дійде до кінця.</div>
+      </div>
+
+      <div>
+        <div style="font-weight:600;margin-bottom:.3rem">❓ Можна зберегти виписки окремими файлами?</div>
+        <div style="color:var(--text2);font-size:14px">Конвертер генерує один файл з усіма виписками. Щоб виділити одну сторінку — відкрийте DOCX у Word і збережіть потрібну сторінку через <strong>Файл → Зберегти як</strong> або надрукуйте лише її.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    Запорізький авіаційний фаховий коледж ім. О. Г. Івченка &nbsp;·&nbsp; 2026
+  </footer>
+
+</div>
+</body>
+</html>
