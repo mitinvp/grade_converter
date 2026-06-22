@@ -20515,9 +20515,11 @@ function parseCSV(text) {
     });
     // Recalculate avg from actual grades (2 decimal places) instead of relying on CSV
     const validGrades = grades.filter(g => g !== null);
-    const avg = validGrades.length
-      ? (validGrades.reduce((a, b) => a + b, 0) / validGrades.length).toFixed(2).replace('.', ',')
-      : null;
+    let avg = null;
+    if (validGrades.length) {
+      const raw = validGrades.reduce((a, b) => a + b, 0) / validGrades.length;
+      avg = raw.toFixed(2).replace('.', ',');
+    }
     rows.push({ no, name, grades, avg });
   }
   return rows;
@@ -20762,11 +20764,15 @@ async function generateDocx() {
     });
 
     if (hasGrades && s.avg) {
+      // Ensure always 2 decimal places (e.g. "3" → "3,00", "3,5" → "3,50")
+      const avgDisplay = s.avg.replace(',', '.').includes('.')
+        ? parseFloat(s.avg.replace(',', '.')).toFixed(2).replace('.', ',')
+        : s.avg + ',00';
       rows.push(new D.TableRow({ children: [
         new D.TableCell({ borders: hborders, width: { size: 6400, type: D.WidthType.DXA }, shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
           children: [new D.Paragraph({ children: [new D.TextRun({ text: 'Середній бал', bold: true, size: 20, font: 'Arial' })] })] }),
         new D.TableCell({ borders: hborders, width: { size: 1200, type: D.WidthType.DXA }, shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
-          children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: s.avg, bold: true, size: 22, font: 'Arial', color: '1E4E79' })] })] }),
+          children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.TextRun({ text: avgDisplay, bold: true, size: 22, font: 'Arial', color: '1E4E79' })] })] }),
         new D.TableCell({ borders: hborders, width: { size: 2760, type: D.WidthType.DXA }, shading: { fill: 'D0E4F5', type: D.ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 },
           children: [new D.Paragraph({ children: [new D.TextRun('')] })] }),
       ]}));
