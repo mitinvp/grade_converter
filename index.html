@@ -20513,8 +20513,11 @@ function parseCSV(text) {
       const n = parseInt(v);
       return isNaN(n) ? null : n;  // "зар.", "н/а" etc. → null
     });
-    const avgRaw = (parts[parts.length - 1] || '').trim();
-    const avg = (avgRaw && avgRaw !== '#DIV/0!' && /[\d,.]/.test(avgRaw)) ? avgRaw : null;
+    // Recalculate avg from actual grades (2 decimal places) instead of relying on CSV
+    const validGrades = grades.filter(g => g !== null);
+    const avg = validGrades.length
+      ? (validGrades.reduce((a, b) => a + b, 0) / validGrades.length).toFixed(2).replace('.', ',')
+      : null;
     rows.push({ no, name, grades, avg });
   }
   return rows;
